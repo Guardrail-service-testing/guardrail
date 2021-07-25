@@ -19,7 +19,7 @@ app.get("/triplets", (req, res) => {
   res.json(triplets)
 })
 
-app.get("/process", (req, res) => {
+app.get("/deltas", (req, res) => {
   const Diff = require('diff')
   const { pruneResponse, convertBodyToText, isDifferentBody, correlationIdOf } = require('./src/utils')
   const statusAndBodyDiff = triplets.filter(({ request, response, replayedResponse }) => {
