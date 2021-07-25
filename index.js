@@ -1,92 +1,61 @@
 require("dotenv").config({ debug: process.env.DEBUG });
+require("colors");
 const express = require("express");
 const morgan = require("morgan");
-const { Sequelize, DataTypes, Model } = require("sequelize");
-
-const sequelize = new Sequelize(
-  process.env.POSTGRES_DB,
-  process.env.POSTGRES_USER,
-  process.env.POSTGRES_PASSWORD,
-  {
-    host: "localhost",
-    port: process.env.POSTGRES_PORT,
-    dialect: "postgres",
-    pool: {
-      max: 5,
-      min: 0,
-      idle: 10000,
-    },
-  }
-);
-
-// test connection
-(async () => {
-  try {
-    await sequelize.authenticate();
-    console.log("Connection has been established successfully.");
-  } catch (error) {
-    console.error("Unable to connect to the database:", error);
-  }
-})();
-
-const Triplet = sequelize.define("Triplet", {
-  id: {
-    type: Sequelize.INTEGER,
-    primaryKey: true,
-    allowNull: false,
-    autoIncrement: true,
-  },
-  request: {
-    type: DataTypes.JSONB,
-  },
-  response: {
-    type: DataTypes.JSONB,
-  },
-  replayResponse: {
-    type: DataTypes.JSONB,
-  },
-});
-
-(async () => {
-  try {
-    await sequelize.sync({ force: true });
-    console.log("All models were synchronized successfully.");
-  } catch (e) {
-    console.error(e);
-  }
-})();
 
 const app = express();
 app.use(morgan("dev"));
 app.use(express.json());
 
-/**
- * Format of the json body: {
- *  request: JSON,
- *  response: JSON,
- *  replay: JSON,
- * }
- */
-app.post("/replays", async (req, res) => {
-  const data = req.body;
-  const { request, response, replay } = data;
-  try {
-    Triplet.sync().then(() => {
-      Triplet.create({ request, response, replayResponse: replay }).then(() =>
-        res.end()
-      );
-    });
-  } catch (e) {
-    console.error(e);
-    res.status(500).end();
-  }
-});
+const triplets = [];
 
-app.get("/all", async (req, res) => {
-  const triplets = await Triplet.findAll();
-  const out = JSON.stringify(triplets, null, 2);
-  res.json(out);
-});
+app.post("/triplets", (req, res) => {
+  const data = req.body
+  triplets.push(data)
+  res.end();
+})
+
+app.get("/triplets", (req, res) => {
+  res.json(triplets)
+})
+
+app.get("/process", (req, res) => {
+  const Diff = require('diff')
+  const statusAndBodyDiff = triplets.filter(({ request, response, replayedResponse }) => {
+    if (response.status !== replayedResponse.status) return true;
+
+    if (Buffer.compare(
+      Buffer.from(response.body),
+      Buffer.from(replayedResponse.body)
+    ) !== 0) {
+      return true
+    }
+    return false
+  })
+
+  const result = statusAndBodyDiff.map(({ response, replayedResponse }) => {
+
+    responseStatus = response.status
+    responseHeaders = response.headers
+    responseBody = Buffer.from(response.body.data).toString();
+
+    replayedResponseStatus = replayedResponse.status
+    replayedResponseHeaders = replayedResponse.headers
+    replayedResponseBody = Buffer.from(replayedResponse.body.data).toString();
+
+    const pickedResponse = { status: responseStatus, headers: responseHeaders, body: responseBody }
+    const pickedReplayedResponse = { status: replayedResponseStatus, headers: replayedResponseHeaders, body: replayedResponseBody }
+
+    const delta = Diff.diffJson(pickedResponse, pickedReplayedResponse)
+    delta.forEach((part) => {
+      const color = part.added ? 'green' :
+        part.removed ? 'red' : 'grey';
+      process.stderr.write(part.value[color]);
+    })
+    return delta
+  })
+  res.json(result)
+})
 
 app.listen(process.env.PORT, (err) => {
   if (err) console.error(err);
