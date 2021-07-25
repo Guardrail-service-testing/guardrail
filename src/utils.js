@@ -17,8 +17,24 @@ const convertBodyToText = (response) => {
   return { body: text, ...rest }
 }
 
+const isDifferentBody = (response, replayedResponse) => {
+  if (Buffer.compare(
+    Buffer.from(response.body),
+    Buffer.from(replayedResponse.body)
+  ) !== 0) {
+    return true
+  }
+  return false
+}
+
+const correlationIdOf = (httpData) => {
+  return httpData.headers['x-correlation-id'];
+}
+
 module.exports = {
   omit,
   pruneResponse,
   convertBodyToText,
+  isDifferentBody,
+  correlationIdOf,
 }

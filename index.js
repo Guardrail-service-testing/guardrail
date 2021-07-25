@@ -21,21 +21,17 @@ app.get("/triplets", (req, res) => {
 
 app.get("/process", (req, res) => {
   const Diff = require('diff')
+  const { pruneResponse, convertBodyToText, isDifferentBody, correlationIdOf } = require('./src/utils')
   const statusAndBodyDiff = triplets.filter(({ request, response, replayedResponse }) => {
     if (response.status !== replayedResponse.status) return true;
 
-    if (Buffer.compare(
-      Buffer.from(response.body),
-      Buffer.from(replayedResponse.body)
-    ) !== 0) {
-      return true
-    }
+    if (isDifferentBody(response, replayedResponse)) return true;
+
     return false
   })
 
-  const { pruneResponse, convertBodyToText } = require('./src/utils')
-
   const listOfDeltas = statusAndBodyDiff.map(({ response, replayedResponse }) => {
+    const correlationId = correlationIdOf(response)
     const recorded = convertBodyToText(pruneResponse(response))
     const replayed = convertBodyToText(pruneResponse(replayedResponse))
     const delta = Diff.diffJson(recorded, replayed)
@@ -45,7 +41,8 @@ app.get("/process", (req, res) => {
         part.removed ? 'red' : 'grey';
       process.stderr.write(part.value[color]);
     })
-    return delta
+
+    return { correlationId, delta }
   })
   res.json(listOfDeltas)
 })
