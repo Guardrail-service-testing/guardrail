@@ -33,20 +33,13 @@ app.get("/process", (req, res) => {
     return false
   })
 
-  const result = statusAndBodyDiff.map(({ response, replayedResponse }) => {
+  const { pruneResponse, convertBodyToText } = require('./src/utils')
 
-    responseStatus = response.status
-    responseHeaders = response.headers
-    responseBody = Buffer.from(response.body.data).toString();
+  const listOfDeltas = statusAndBodyDiff.map(({ response, replayedResponse }) => {
+    const recorded = convertBodyToText(pruneResponse(response))
+    const replayed = convertBodyToText(pruneResponse(replayedResponse))
+    const delta = Diff.diffJson(recorded, replayed)
 
-    replayedResponseStatus = replayedResponse.status
-    replayedResponseHeaders = replayedResponse.headers
-    replayedResponseBody = Buffer.from(replayedResponse.body.data).toString();
-
-    const pickedResponse = { status: responseStatus, headers: responseHeaders, body: responseBody }
-    const pickedReplayedResponse = { status: replayedResponseStatus, headers: replayedResponseHeaders, body: replayedResponseBody }
-
-    const delta = Diff.diffJson(pickedResponse, pickedReplayedResponse)
     delta.forEach((part) => {
       const color = part.added ? 'green' :
         part.removed ? 'red' : 'grey';
@@ -54,7 +47,7 @@ app.get("/process", (req, res) => {
     })
     return delta
   })
-  res.json(result)
+  res.json(listOfDeltas)
 })
 
 app.listen(process.env.PORT, (err) => {
