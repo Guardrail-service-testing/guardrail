@@ -2,6 +2,7 @@ require("dotenv").config({ debug: process.env.DEBUG });
 require("colors");
 const express = require("express");
 const morgan = require("morgan");
+const db = require("./db/mongo");
 
 const PORT = process.env.PORT || 9001;
 const app = express();
@@ -16,7 +17,11 @@ app.post("/triplets", (req, res) => {
   res.end();
 });
 
-app.get("/triplets", (req, res) => {
+app.get("/triplets/", (req, res) => {
+  res.json(triplets);
+});
+
+app.get("/triplets/:xcid", (req, res) => {
   res.json(triplets);
 });
 
