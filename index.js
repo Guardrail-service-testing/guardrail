@@ -145,52 +145,20 @@ app.get("/deltas", (req, res) => {
 });
 
 app.get("/diff", async (req, res, next) => {
-  const {
-    pruneResponse,
-    convertBodyToText,
-    isDifferentBody,
-    unifiedDiff,
-  } = require("./src/utils");
+  const { isDifferentStatusAndBody, diffTwoResponses } = require("./src/utils");
 
   const triplets = await Triplet.find({});
   const tripletsWithDifferentStatusAndBody = triplets.filter(
-    ({ request, response, replayedResponse }) => {
-      try {
-        if (response.status !== replayedResponse.status) return true;
-
-        if (isDifferentBody(response, replayedResponse)) return true;
-
-        return false;
-      } catch (error) {
-        console.error(error);
-        next(error);
-      }
-    }
+    isDifferentStatusAndBody
   );
-
-  const listOfDeltas = tripletsWithDifferentStatusAndBody.map(
-    ({ response, replayedResponse }) => {
-      try {
-        const { correlationId } = response;
-        const recorded = convertBodyToText(pruneResponse(response));
-        const replayed = convertBodyToText(pruneResponse(replayedResponse));
-
-        const diffUnifiedPatch = unifiedDiff(
-          `${correlationId} recorded`,
-          `${correlationId} replayed`,
-          JSON.stringify(recorded),
-          JSON.stringify(replayed)
-        );
-
-        return { correlationId, diffUnifiedPatch };
-      } catch (error) {
-        console.error(error);
-        next(error);
-      }
-    }
-  );
-
-  res.json(listOfDeltas);
+  try {
+    const listOfDeltas =
+      tripletsWithDifferentStatusAndBody.map(diffTwoResponses);
+    res.json(listOfDeltas);
+  } catch (error) {
+    console.error(error);
+    next(error);
+  }
 });
 
 app.listen(PORT, (err) => {

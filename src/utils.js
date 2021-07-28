@@ -34,6 +34,7 @@ const isDifferentBody = (response, replayedResponse) => {
 const correlationIdOf = (httpData) => {
   return httpData.headers["x-correlation-id"];
 };
+
 const unifiedDiff = (
   oldTitle,
   newTitle,
@@ -52,6 +53,29 @@ const unifiedDiff = (
   );
 };
 
+const isDifferentStatusAndBody = ({ request, response, replayedResponse }) => {
+  if (response.status !== replayedResponse.status) return true;
+
+  if (isDifferentBody(response, replayedResponse)) return true;
+
+  return false;
+};
+
+const diffTwoResponses = ({ response, replayedResponse }) => {
+  const { correlationId } = response;
+  const recorded = convertBodyToText(pruneResponse(response));
+  const replayed = convertBodyToText(pruneResponse(replayedResponse));
+
+  const diffUnifiedPatch = unifiedDiff(
+    `${correlationId} recorded`,
+    `${correlationId} replayed`,
+    JSON.stringify(recorded),
+    JSON.stringify(replayed)
+  );
+
+  return { correlationId, diffUnifiedPatch };
+};
+
 module.exports = {
   omit,
   pruneResponse,
@@ -59,4 +83,6 @@ module.exports = {
   isDifferentBody,
   correlationIdOf,
   unifiedDiff,
+  diffTwoResponses,
+  isDifferentStatusAndBody,
 };
