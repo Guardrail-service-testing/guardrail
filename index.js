@@ -59,14 +59,28 @@ app.get("/triplets", async (req, res, next) => {
     .catch(next);
 });
 
-app.get("/triplets/:requestSesionId", async (req, res) => {
-  const replaySessionId = req.params.replaySessionId;
-  const triplets = await Triplet.find({ match: replaySessionId });
-  res.json(triplets);
+// app.get("/triplets/:requestSesionId", async (req, res) => {
+//   const replaySessionId = req.params.replaySessionId;
+//   const triplets = await Triplet.find({ match: replaySessionId });
+//   res.json(triplets);
+// });
+
+app.get("/replay-sessions", async (req, res, next) => {
+  Triplet.distinct("replaySessionId")
+    .then((result) => res.json(result))
+    .catch((error) => {
+      console.error(error);
+      next(error);
+    });
 });
 
-app.get("/triplets/:xcid", (req, res) => {
-  res.status(501).end();
+app.get("/triplets/:correlationId", (req, res) => {
+  Triplet.findOne({ correlationId: req.params.correlationId })
+    .then((triplet) => res.json(triplet))
+    .catch((error) => {
+      next(error);
+      res.status(404).end();
+    });
 });
 
 app.get("/deltas", (req, res) => {
