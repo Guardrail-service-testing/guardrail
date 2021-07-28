@@ -3,26 +3,70 @@ require("colors");
 const express = require("express");
 const morgan = require("morgan");
 const db = require("./db/mongo");
+const { Request } = require("./db/models/request");
+const { Response } = require("./db/models/response");
+const { ReplayedResponse } = require("./db/models/replayedResponse");
+const Triplet = require("./db/models/triplet");
 
 const PORT = process.env.PORT || 9001;
 const app = express();
 app.use(morgan("dev"));
 app.use(express.json());
 
-const triplets = [];
-
-app.post("/triplets", (req, res) => {
+app.post("/triplets", async (req, res, next) => {
   const data = req.body;
-  triplets.push(data);
+  const { replaySessionId, correlationId, triplets } = data;
+  const { request, response, replayedResponse } = triplets;
+  try {
+    const req1 = await Request.create({
+      replaySessionId,
+      correlationId,
+      ...request,
+    });
+    const res1 = await Response.create({
+      replaySessionId,
+      correlationId,
+      ...response,
+    });
+    const repl1 = await ReplayedResponse.create({
+      replaySessionId,
+      correlationId,
+      ...replayedResponse,
+    });
+
+    Triplet.create({
+      replaySessionId,
+      correlationId,
+      request: req1,
+      response: res1,
+      replayedResponse: repl1,
+    }).then((t) => console.log(t));
+  } catch (error) {
+    next(error);
+  }
+
   res.end();
 });
 
-app.get("/triplets/", (req, res) => {
+app.get("/responses", async (req, res) => {
+  const responses = await Response.find({});
+  res.send(responses);
+});
+
+app.get("/triplets", async (req, res, next) => {
+  Triplet.find({})
+    .then((triplets) => res.send(triplets))
+    .catch(next);
+});
+
+app.get("/triplets/:requestSesionId", async (req, res) => {
+  const replaySessionId = req.params.replaySessionId;
+  const triplets = await Triplet.find({ match: replaySessionId });
   res.json(triplets);
 });
 
 app.get("/triplets/:xcid", (req, res) => {
-  res.json(triplets);
+  res.status(501).end();
 });
 
 app.get("/deltas", (req, res) => {
