@@ -105,6 +105,56 @@ app.get("/deltas", (req, res) => {
   res.json(listOfDeltas);
 });
 
+app.get("/diff", async (req, res, next) => {
+  const Diff = require("diff");
+  const {
+    pruneResponse,
+    convertBodyToText,
+    isDifferentBody,
+    correlationIdOf,
+  } = require("./src/utils");
+
+  const triplets = await Triplet.find({});
+  const tripletsWithDifferentStatusAndBody = triplets.filter(
+    ({ request, response, replayedResponse }) => {
+      // const replayResponse = replayedResponses[0];
+      try {
+        if (response.status !== replayedResponse.status) return true;
+
+        if (isDifferentBody(response, replayedResponse)) return true;
+
+        return false;
+      } catch (error) {
+        console.error(error);
+        next(error);
+      }
+    }
+  );
+
+  const listOfDeltas = tripletsWithDifferentStatusAndBody.map(
+    ({ response, replayedResponse }) => {
+      try {
+        const { correlationId } = response;
+        const recorded = convertBodyToText(pruneResponse(response));
+        const replayed = convertBodyToText(pruneResponse(replayedResponse));
+        const delta = Diff.diffJson(recorded, replayed);
+
+        delta.forEach((part) => {
+          const color = part.added ? "green" : part.removed ? "red" : "grey";
+          process.stderr.write(part.value[color]);
+        });
+
+        return { correlationId, delta };
+      } catch (error) {
+        console.error(error);
+        next(error);
+      }
+    }
+  );
+
+  res.json(listOfDeltas);
+});
+
 app.listen(PORT, (err) => {
   if (err) console.error(err);
   console.log("Server is listening on PORT ", PORT);

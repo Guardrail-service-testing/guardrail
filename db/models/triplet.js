@@ -12,7 +12,8 @@ const TripletSchema = new Schema({
   correlationId: String,
   request: RequestSchema,
   response: ResponseSchema,
-  replayedResponse: [ReplayedResponseSchema],
+  replayedResponse: ReplayedResponseSchema,
+  // replayedResponses: [ReplayedResponseSchema],
 });
 
 const Triplet = mongoose.model("Triplet", TripletSchema);
