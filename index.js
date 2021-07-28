@@ -117,7 +117,6 @@ app.get("/diff", async (req, res, next) => {
   const triplets = await Triplet.find({});
   const tripletsWithDifferentStatusAndBody = triplets.filter(
     ({ request, response, replayedResponse }) => {
-      // const replayResponse = replayedResponses[0];
       try {
         if (response.status !== replayedResponse.status) return true;
 
@@ -137,14 +136,15 @@ app.get("/diff", async (req, res, next) => {
         const { correlationId } = response;
         const recorded = convertBodyToText(pruneResponse(response));
         const replayed = convertBodyToText(pruneResponse(replayedResponse));
-        const delta = Diff.diffJson(recorded, replayed);
 
-        delta.forEach((part) => {
-          const color = part.added ? "green" : part.removed ? "red" : "grey";
-          process.stderr.write(part.value[color]);
-        });
+        const diffUnifiedPatch = Diff.createTwoFilesPatch(
+          `${correlationId} recorded`,
+          `${correlationId} replayed`,
+          JSON.stringify(recorded),
+          JSON.stringify(replayed)
+        );
 
-        return { correlationId, delta };
+        return { correlationId, diffUnifiedPatch };
       } catch (error) {
         console.error(error);
         next(error);
