@@ -1,35 +1,56 @@
+const Diff = require("diff");
+
 const omit = (keys, obj) => {
-  if (keys.length === 0) return obj
+  if (keys.length === 0) return obj;
   const { [keys.pop()]: omitted, ...rest } = obj;
   return omit(keys, rest);
-}
+};
 
 const pruneResponse = (response, ignoreHeaders = []) => {
-  const { status, headers, body } = response
-  const filteredHeaders = omit(ignoreHeaders, headers)
+  const { status, headers, body } = response;
+  const filteredHeaders = omit(ignoreHeaders, headers);
 
-  return { status, headers: filteredHeaders, body }
-}
+  return { status, headers: filteredHeaders, body };
+};
 
 const convertBodyToText = (response) => {
-  const { body, ...rest } = response
-  const text = Buffer.from(response.body).toString()
-  return { body: text, ...rest }
-}
+  const { body, ...rest } = response;
+  const text = Buffer.from(response.body).toString();
+  return { body: text, ...rest };
+};
 
 const isDifferentBody = (response, replayedResponse) => {
-  if (Buffer.compare(
-    Buffer.from(response.body),
-    Buffer.from(replayedResponse.body)
-  ) !== 0) {
-    return true
+  if (
+    Buffer.compare(
+      Buffer.from(response.body),
+      Buffer.from(replayedResponse.body)
+    ) !== 0
+  ) {
+    return true;
   }
-  return false
-}
+  return false;
+};
 
 const correlationIdOf = (httpData) => {
-  return httpData.headers['x-correlation-id'];
-}
+  return httpData.headers["x-correlation-id"];
+};
+const unifiedDiff = (
+  oldTitle,
+  newTitle,
+  oldText,
+  newText,
+  oldHeader,
+  newHeader
+) => {
+  return Diff.createTwoFilesPatch(
+    oldTitle,
+    newTitle,
+    oldText,
+    newText,
+    oldHeader,
+    newHeader
+  );
+};
 
 module.exports = {
   omit,
@@ -37,4 +58,5 @@ module.exports = {
   convertBodyToText,
   isDifferentBody,
   correlationIdOf,
-}
+  unifiedDiff,
+};

@@ -106,12 +106,11 @@ app.get("/deltas", (req, res) => {
 });
 
 app.get("/diff", async (req, res, next) => {
-  const Diff = require("diff");
   const {
     pruneResponse,
     convertBodyToText,
     isDifferentBody,
-    correlationIdOf,
+    unifiedDiff,
   } = require("./src/utils");
 
   const triplets = await Triplet.find({});
@@ -137,7 +136,7 @@ app.get("/diff", async (req, res, next) => {
         const recorded = convertBodyToText(pruneResponse(response));
         const replayed = convertBodyToText(pruneResponse(replayedResponse));
 
-        const diffUnifiedPatch = Diff.createTwoFilesPatch(
+        const diffUnifiedPatch = unifiedDiff(
           `${correlationId} recorded`,
           `${correlationId} replayed`,
           JSON.stringify(recorded),
