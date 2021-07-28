@@ -4,15 +4,23 @@ To get it working, set the `replay_middleware` (main) to point to this instance.
 
 The app listens on PORT 9001
 
-| method | path                                      | notes                                                                                       |
-| ------ | ----------------------------------------- | ------------------------------------------------------------------------------------------- |
-| post   | /triplets                                 | This path will accept JSON bodies of the request, response, and replayed response.          |
-| get    | /triplets                                 | This returns all the records of triplets as a json as a JSON                                |
-| get    | /triplets/latest                          | Returns the latest triplets                                                                 |
-| get    | /triplets/latest/:correlationId           | 1 triplet                                                                                   |
-| get    | /triplets/:replaySessionId/:correlationId | 1 triplet                                                                                   |
+| method | path                                      | notes                                                                                                  |
+| ------ | ----------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| post   | /triplets                                 | This path will accept JSON bodies of the request, response, and replayed response.                     |
+| get    | /triplets                                 | This returns all the records of triplets as a json as a JSON                                           |
+| get    | /triplets/latest                          | Returns the latest triplets                                                                            |
+| get    | /triplets/latest/:correlationId           | 1 triplet                                                                                              |
+| get    | /triplets/:replaySessionId/:correlationId | 1 triplet                                                                                              |
 | get    | /deltas                                   | DEPRECATED This returns deltas return by the `Diff` library. It also outputs the result on `stderror`. |
+| get    | /diff                                     | Diff of latest replay session                                                                          |
 
+To be implemented:
+
+| method | path                                  | notes |
+| ------ | ------------------------------------- | ----- |
+| get    | /diff/:replaySessionId                |       |
+| get    | /diff/latest/:correlationId           |       |
+| get    | /diff/:replaySessionId/:correlationId |       |
 
 ## setting up mongodb
 
