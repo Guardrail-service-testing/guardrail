@@ -53,17 +53,42 @@ app.get("/responses", async (req, res) => {
   res.send(responses);
 });
 
+const latestReplaySessionId = async () => {
+  const distinctSessions = await Triplet.distinct("replaySessionId");
+  return distinctSessions.sort()[distinctSessions.length - 1];
+};
+
 app.get("/triplets", async (req, res, next) => {
-  Triplet.find({})
-    .then((triplets) => res.send(triplets))
+  Triplet.find({ replaySessionId })
+    .then((triplets) => res.json(triplets))
     .catch(next);
 });
 
-// app.get("/triplets/:requestSesionId", async (req, res) => {
-//   const replaySessionId = req.params.replaySessionId;
-//   const triplets = await Triplet.find({ match: replaySessionId });
-//   res.json(triplets);
-// });
+app.get("/triplets/latest", async (req, res, next) => {
+  const replaySessionId = await latestReplaySessionId();
+  Triplet.find({ replaySessionId })
+    .then((triplets) => res.json(triplets))
+    .catch(next);
+});
+
+app.get("/triplets/:replaySessionId", async (req, res) => {
+  const replaySessionId = Number(req.params.replaySessionId);
+  const triplets = await Triplet.find({ replaySessionId });
+  res.json(triplets);
+});
+
+app.get("/triplets/latest/:correlationId", async (req, res) => {
+  let { correlationId } = req.params;
+  const replaySessionId = await latestReplaySessionId();
+  const triplet = await Triplet.findOne({ replaySessionId, correlationId });
+  res.json(triplet);
+});
+
+app.get("/triplets/:replaySessionId/:correlationId", async (req, res) => {
+  let { replaySessionId, correlationId } = req.params;
+  const triplet = await Triplet.findOne({ replaySessionId, correlationId });
+  res.json(triplet);
+});
 
 app.get("/replay-sessions", async (req, res, next) => {
   Triplet.distinct("replaySessionId")
@@ -74,12 +99,12 @@ app.get("/replay-sessions", async (req, res, next) => {
     });
 });
 
-app.get("/triplets/:correlationId", (req, res) => {
-  Triplet.findOne({ correlationId: req.params.correlationId })
-    .then((triplet) => res.json(triplet))
+app.get("/replay-sessions/:replaySessionId", async (req, res, next) => {
+  Triplet.find({ replaySessionId: req.params.replaySessionId })
+    .then((result) => res.json(result))
     .catch((error) => {
+      console.error(error);
       next(error);
-      res.status(404).end();
     });
 });
 
