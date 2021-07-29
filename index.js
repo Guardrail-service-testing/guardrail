@@ -7,6 +7,7 @@ const { Request } = require("./db/models/request");
 const { Response } = require("./db/models/response");
 const { ReplayedResponse } = require("./db/models/replayedResponse");
 const Triplet = require("./db/models/triplet");
+const { IgnoredHeader } = require("./db/models/ignoredHeader");
 
 const PORT = process.env.PORT || 9001;
 const app = express();
@@ -65,7 +66,7 @@ app.get("/triplets", async (req, res, next) => {
 });
 
 app.get("/triplets/latest", async (req, res, next) => {
-  const replaySessionId = await latestReplaySessionId();
+  const replaySessionId = latestReplaySessionId();
   Triplet.find({ replaySessionId })
     .then((triplets) => res.json(triplets))
     .catch(next);
@@ -147,19 +148,82 @@ app.get("/deltas", (req, res) => {
 app.get("/diff", async (req, res, next) => {
   const { isDifferentStatusAndBody, diffTwoResponses } = require("./src/utils");
 
-  const triplets = await Triplet.find({});
+  const replaySessionId = await latestReplaySessionId();
+  const triplets = await Triplet.find({ replaySessionId }).lean();
+  const ignoredHeaders = await IgnoredHeader.find({}) || [];
   const tripletsWithDifferentStatusAndBody = triplets.filter(
     isDifferentStatusAndBody
   );
   try {
     const listOfDeltas =
-      tripletsWithDifferentStatusAndBody.map(diffTwoResponses);
+      tripletsWithDifferentStatusAndBody.map((triplet) => diffTwoResponses(triplet, ignoredHeaders));
     res.json(listOfDeltas);
   } catch (error) {
     console.error(error);
     next(error);
   }
 });
+
+app.get("/report", async (req, res, next) => {
+  const {
+    isDifferentBody,
+  } = require("./src/utils")
+
+  const replaySessionId = await latestReplaySessionId();
+  const triplets = await Triplet.find({ replaySessionId })
+
+  const recordedLatencies = []; // this should be response time (roundtrip from the recording device, not the end user response time) although goreplay calls it latency
+  const replayedLatencies = [];
+  const recordedLatenciesWithoutError500 = []; // be careful of integer overflow
+  const replayedLatenciesWithoutError500 = [];
+  let totalRequests = 0;
+  let totalResponses = 0;
+  let notError500ButDifferentBody = 0;
+  let recordedError500 = 0;
+  let replayedError500 = 0;
+
+  triplets.forEach(triplet => {
+    const { response, replayedResponse } = triplet
+    totalRequests += 1
+    if (triplet.replayedResponse !== undefined) {
+      totalResponses += 1
+    }
+
+    recordedLatencies.push(response.meta.latency)
+    replayedLatencies.push(replayedResponse.meta.latency)
+
+    if (response.status === 500) {
+      recordedError500 += 1
+    } else {
+      recordedLatenciesWithoutError500.push(response.meta.latency)
+    }
+
+    if (replayedResponse.status === 500) {
+      replayedError500 += 1
+    } else {
+      replayedLatenciesWithoutError500.push(replayedResponse.meta.latency)
+    }
+
+    if (isDifferentBody(response, replayedResponse)) {
+      notError500ButDifferentBody += 1;
+    }
+  })
+
+  const average = arr => arr.reduce((p, c) => p + c, 0) / arr.length;
+  const recordedAverageLatencies = average(recordedLatencies)
+  const replayedAverageLatencies = average(replayedLatencies)
+  const recordedAverageLatenciesWithoutError500 = average(recordedLatenciesWithoutError500)
+  const replayedAverageLatenciesWithoutError500 = average(replayedLatenciesWithoutError500)
+  const report = {
+    replaySessionId,
+    totalRequests, totalResponses, recordedError500, replayedError500, notError500ButDifferentBody,
+    recordedAverageLatencies, replayedAverageLatencies,
+    recordedAverageLatenciesWithoutError500, replayedAverageLatenciesWithoutError500,
+  }
+
+  console.log(report)
+  res.json(report)
+})
 
 app.listen(PORT, (err) => {
   if (err) console.error(err);
