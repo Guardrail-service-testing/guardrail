@@ -8,9 +8,10 @@ const omit = (keys, obj) => {
 
 const pruneResponse = (response, ignoreHeaders = []) => {
   const { status, headers, body } = response;
+  const { timestamp, latency } = response.meta;
   const filteredHeaders = omit(ignoreHeaders, headers);
 
-  return { status, headers: filteredHeaders, body };
+  return { status, headers: filteredHeaders, body, timestamp, latency };
 };
 
 const convertBodyToText = (response) => {
@@ -61,19 +62,29 @@ const isDifferentStatusAndBody = ({ request, response, replayedResponse }) => {
   return false;
 };
 
-const diffTwoResponses = ({ response, replayedResponse }) => {
-  const { correlationId } = response;
-  const recorded = convertBodyToText(pruneResponse(response));
-  const replayed = convertBodyToText(pruneResponse(replayedResponse));
-
-  const diffUnifiedPatch = unifiedDiff(
-    `${correlationId} recorded`,
-    `${correlationId} replayed`,
+const diffJson = (whichPart, recorded, replayed) => {
+  return unifiedDiff(
+    `recorded ${whichPart}`,
+    `replayed ${whichPart}`,
     JSON.stringify(recorded),
     JSON.stringify(replayed)
-  );
+  )
+}
 
-  return { correlationId, diffUnifiedPatch };
+const diffTwoResponses = ({ response, replayedResponse, ignoredHeaders }) => {
+  const { correlationId, replaySessionId } = response;
+  const recorded = convertBodyToText(pruneResponse(response, ignoredHeaders));
+  const replayed = convertBodyToText(pruneResponse(replayedResponse, ignoredHeaders));
+
+  const statusUnifiedDiffPatch = diffJson('body', recorded.status, replayed.status)
+  const headersUnifiedDiffPatch = diffJson('body', recorded.headers, replayed.headers)
+  const bodyUnifiedDiffPatch = diffJson('body', recorded.body, replayed.body)
+
+  return {
+    correlationId, replaySessionId, ignoredHeaders, statusUnifiedDiffPatch, headersUnifiedDiffPatch, bodyUnifiedDiffPatch,
+    recorded,
+    replayed,
+  };
 };
 
 module.exports = {
