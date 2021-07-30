@@ -2,7 +2,10 @@
 
 To get it working, set the `replay_middleware` (main) to point to this instance.
 
-The app listens on PORT 9001
+ENV variables to set:
+
+- PORT=9001
+- MONGO_URI:mongodb://localhost:27017/replay
 
 | method | path                                      | notes                                                                                                  |
 | ------ | ----------------------------------------- | ------------------------------------------------------------------------------------------------------ |
