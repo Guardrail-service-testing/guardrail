@@ -27,8 +27,17 @@ To be implemented:
 
 ## setting up mongodb
 
-- Run `docker run --net=host --name some-mongo -v /home/james/caps/datadir:/data/db -d mongo`
+- Run `docker run --net=host --name replay-mongo -v /HOST/PATH/datadir:/data/db -d mongo`
 
-  - This will run a mongo container, named `some-mongo` on the background. See `docker ps`.
+  - This will run a mongo container, named `replay-mongo` on the background. See `docker ps`.
 
   - For now, no credentials are set up.
+
+## Running App1 in docker by itself
+
+Build with `docker build -t app1 .`
+
+Run `docker run -it --rm -P -e "MONGO_URI=mongodb://172.17.0.1:27017/replay" app1`
+
+The default port is 9001. To remap, use `-p 3000:9001` or `-e PORT=3001 -p 3000:3001`
+The default MONGO_URI points to `172.17.0.1`. This is the default IP of the host from inside the container.
