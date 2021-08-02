@@ -2,7 +2,7 @@ require("dotenv").config({ debug: process.env.DEBUG });
 require("colors");
 const express = require("express");
 const morgan = require("morgan");
-const db = require("./db/mongo");
+const { connectDb, db } = require("./db/mongo");
 const { Request } = require("./db/models/request");
 const { Response } = require("./db/models/response");
 const { ReplayedResponse } = require("./db/models/replayedResponse");
@@ -225,7 +225,10 @@ app.get("/report", async (req, res, next) => {
   res.json(report)
 })
 
-app.listen(PORT, (err) => {
-  if (err) console.error(err);
-  console.log("Server is listening on PORT ", PORT);
-});
+connectDb().then(async () => {
+  app.listen(PORT, (err) => {
+    if (err) console.error(err);
+    console.log("Server is listening on PORT ", PORT);
+  });
+})
+
