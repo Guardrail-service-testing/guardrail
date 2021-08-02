@@ -1,0 +1,29 @@
+version: "3.4"
+
+services:
+  collector:
+    image: collector
+    restart: always
+    depends_on:
+      - mongodb
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    environment:
+      NODE_ENV: production
+    ports:
+      - 9001:9001
+    networks:
+      - collectornetwork
+
+  mongodb:
+    image: mongo
+    restart: always
+    ports:
+      - 27027:27017
+    networks:
+      - collectornetwork
+
+networks:
+  collectornetwork:
+    driver: bridge

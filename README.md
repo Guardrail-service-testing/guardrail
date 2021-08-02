@@ -41,3 +41,17 @@ Run `docker run -it --rm -P -e "MONGO_URI=mongodb://172.17.0.1:27017/replay" app
 
 The default port is 9001. To remap, use `-p 3000:9001` or `-e PORT=3001 -p 3000:3001`
 The default MONGO_URI points to `172.17.0.1`. This is the default IP of the host from inside the container.
+
+## Running App1 with docker-compose
+
+Run docker `docker-compose up` at the root directory.
+
+The `docker-compose.yml` joins app1/collector with MongoDB.
+It exposes:
+
+- PORT 9001 for the collector app.
+- PORT 27027 for the MongoDB
+- PORT 9229 (dev) for node inspector
+- PORT 8081 (dev) for mongo-express tool
+
+To debug docker-compose apps with VSCode, see https://code.visualstudio.com/docs/containers/docker-compose
