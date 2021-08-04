@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<!-- CSS -->
+	<link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/diff2html/bundles/css/diff2html.min.css" />
+
+	<!-- Javascripts -->
+	<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/diff2html/bundles/js/diff2html-ui.min.js"></script>
+
+	<title>Document</title>
+</head>
+<body>
+	<div id="destination-elem-id"></div>
+	<script>
+		const targetElement = document.getElementById('destination-elem-id');
+		const configuration = { drawFileList: true, matching: 'lines' ,
+		        outputFormat: 'side-by-side',
+        synchronisedScroll: true,
+        highlight: true,
+	};
+		const diffString = "Index: \n===================================================================\n--- \n+++ \n@@ -1,1 +1,1 @@\n-asdf\n\\ No newline at end of file\n+fasdff\n\\ No newline at end of file\n"
+
+		const diff2htmlUi = new Diff2HtmlUI(targetElement, diffString, configuration);
+// or
+		//const diff2htmlUi = new Diff2HtmlUI(targetElement, diffJson, configuration);
+		diff2htmlUi.draw();
+	</script>
+</body>
+</html>

@@ -1,0 +1,18 @@
+header {
+  margin-left: 38px;
+}
+
+section {
+  margin-left: 38px;
+}
+
+ul {
+  list-style-type: none;
+  margin-left: -38px;
+  margin-right: 38px;
+}
+
+.preview {
+  border: solid gray;
+  margin: 5px 0px;
+}

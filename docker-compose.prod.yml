@@ -1,0 +1,35 @@
+version: "3.4"
+
+services:
+  web:
+    depends_on:
+      - mongo
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+    # env_file: ./server/.env # TODO -uncomment this to auto-load your .env file
+    environment:
+      NODE_ENV: production
+    ports:
+      - "8080:8080"
+    networks:
+      - app-network
+
+  mongo:
+    image: mongo
+    volumes:
+      - data-volume:/data/db
+    ports:
+      - 27027:27017
+    networks:
+      - app-network
+
+volumes:
+  data-volume:
+  node_modules:
+  web-root:
+    driver: local
+
+networks:
+  app-network:
+    driver: bridge

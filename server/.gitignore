@@ -1,3 +1,7 @@
+# ignore front end ui
+simple-react-ui
+build
+
 # Logs
 logs
 *.log
