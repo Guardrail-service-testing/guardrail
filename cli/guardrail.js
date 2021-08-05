@@ -5,7 +5,7 @@ const fs = require("fs");
 const gor = require("./src/goReplayWrapper");
 const mb = require("./src/mountebankWrapper");
 
-const OUTPUT_FILE_DIR_NAME = `${process.cwd()}/.guardrail`;
+const OUTPUT_DIR = `${process.cwd()}/.guardrail`;
 const options = program.opts();
 
 program.version("0.0.1");
@@ -26,27 +26,26 @@ program
   .command("setup-proxies")
   .description("Setup proxies for service virtualization.")
   .action(() => {
-
     // parse dependencies.json
     const { createImposters } = require("./src/mountebankHelper");
     try {
-      const dependencies = require(`${OUTPUT_FILE_DIR_NAME}/dependencies.json`);
+      const dependencies = require(`${OUTPUT_DIR}/dependencies.json`);
       const { imposters, proxyList } = createImposters(dependencies);
 
       // output imposters.ejs
-      const imposterFile = `${OUTPUT_FILE_DIR_NAME}/imposters.ejs`;
+      const imposterFile = `${OUTPUT_DIR}/imposters.ejs`;
       const imposterData = JSON.stringify({ imposters }, null, 2);
       fs.writeFileSync(imposterFile, imposterData);
 
       // output proxy-list.json
-      const proxyListFile = `${OUTPUT_FILE_DIR_NAME}/proxy-list.json`;
+      const proxyListFile = `${OUTPUT_DIR}/proxy-list.json`;
       fs.writeFileSync(proxyListFile, JSON.stringify({ proxyList }, null, 2));
     } catch (error) {
       console.error(error.message);
     }
     // start mb with the same imposters.ejs
     try {
-      mb.record(options.mbPort, OUTPUT_FILE_DIR_NAME);
+      mb.record(options.mbPort, OUTPUT_DIR);
     } catch (error) {
       console.error(error.message);
     }
@@ -89,11 +88,9 @@ program
   .description("Start recording to capture upstream and downstream traffic.")
   .action(() => {
     console.log("Getting Guardrail ready to record...");
-    fs.mkdirSync("./traffic/logs", { recursive: true });
 
-    mb.record(options.mbPort, OUTPUT_FILE_DIR_NAME);
-    console.log();
-    gor.record(options.gorPort);
+    gor.record(options.gorPort, OUTPUT_DIR);
+    mb.record(options.mbPort, OUTPUT_DIR);
 
     console.log("  Recording in progress!");
   });

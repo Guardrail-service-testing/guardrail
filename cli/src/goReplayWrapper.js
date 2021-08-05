@@ -2,20 +2,22 @@ const fs = require('fs');
 const { spawn } = require('child_process');
 
 const goReplayWrapper = {
-  record(port) {
+  record(port, directory) {
     console.log('  Creating traffic directory for GoReplay...');
-    fs.mkdirSync('./traffic/gor', { recursive: true });
+    fs.mkdirSync(`${directory}/gor`, { recursive: true });
+    fs.mkdirSync(`${directory}/logs`, { recursive: true });
 
-    console.log(`  Starting GoReplay listening on port ${port} and writing to "./traffic/gor/requests_0.gor"...`);
-    const gorOut = fs.openSync('./traffic/logs/gor_out.log', 'a');
-    const gorErr = fs.openSync('./traffic/logs/gor_err.log', 'a');
+    console.log(`  Starting GoReplay listening on port ${port} and writing to "${directory}/gor/requests_0.gor"...`);
+    const gorOut = fs.openSync(`${directory}/logs/gor_out.log`, 'a');
+    const gorErr = fs.openSync(`${directory}/logs/gor_err.log`, 'a');
     const gorSubprocess = spawn('gor',
       [
         '--input-raw', `:${port}`,
-        '--input-raw-buffer-size', '32mb',
+        '--input-raw-buffer-size=32768000',
+        '--copy-buffer-size=32768000',
         '--input-raw-track-response',
         '--output-http-track-response',
-        '--output-file="./traffic/gor/requests.gor"'
+        `--output-file="${directory}/gor/requests.gor"`
       ],
       {
         shell: true,
@@ -26,6 +28,7 @@ const goReplayWrapper = {
     fs.writeFileSync('gor.pid', `${gorSubprocess.pid}`);
   },
 
+  /*
   replay(port) {
     console.log(`  Starting GoReplay in replay mode with input file "./traffic/gor/requests_0.gor" replaying to port ${port}...`);
     const gorOut = fs.openSync('./traffic/logs/gor_out.log', 'a');
@@ -33,7 +36,8 @@ const goReplayWrapper = {
     const gorSubprocess = spawn('gor',
       [
         '--input-file=./traffic/gor/requests_0.gor',
-        '--input-raw-buffer-size=32mb',
+        '--input-raw-buffer-size=128000000',
+        '--copy-buffer-size=128000000',
         '--input-raw-track-response',
         '--output-stdout',
         '--output-http-track-response',
@@ -48,6 +52,7 @@ const goReplayWrapper = {
 
     fs.writeFileSync('gor.pid', `${gorSubprocess.pid}`);
   },
+  */
 
   stop() {
     // close GoReplay if it's still running
