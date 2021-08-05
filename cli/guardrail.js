@@ -99,12 +99,30 @@ program
   .command("stop")
   .description("Close any running recording processes, but leave traffic data intact.")
   .action(() => {
-    console.log('Stopping...');
+    console.log("Stopping...");
 
     gor.stop();
     mb.stop();
 
-    console.log('  Stopped!');
+    console.log("  Stopped!");
+  });
+
+program.command('clean')
+  .description("Clean up: close any running recording processes and remove log and traffic data directories.")
+  .action(() => {
+    console.log("Cleaning up...");
+
+    gor.stop();
+    mb.stop();
+
+    ["gor", "logs", "mb"].forEach(dirname => {
+      if (fs.existsSync(`${OUTPUT_DIR}/${dirname}`)) {
+        console.log(`  Removing ${dirname} files...`);
+        fs.rmSync(`${OUTPUT_DIR}/${dirname}`, { force: true, recursive: true });
+      }
+    });
+
+    console.log("  Cleaning is finished!");
   });
 
 program.parse(process.argv);
