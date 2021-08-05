@@ -42,7 +42,7 @@ const createLocalhostUrl = ({ protocol, port }) => {
 
 const createImposters = (destinationList) => {
   const protocol = "http"; // Support protocol
-  const outputList = [];
+  const proxyList = [];
   const imposters = destinationList.map(
     ({ destinationURL, proxyPort, varName }) => {
       const { to } = splitProtocolUrl(destinationURL);
@@ -51,7 +51,7 @@ const createImposters = (destinationList) => {
         matchBody,
         matchXCorrelationIdHeader
       );
-      outputList.push({
+      proxyList.push({
         varName,
         to,
         proxy: createLocalhostUrl({ protocol, port: proxyPort }),
@@ -60,7 +60,7 @@ const createImposters = (destinationList) => {
     }
   );
 
-  return { imposters, outputList };
+  return { imposters, proxyList };
 };
 
 const specString = `[
@@ -76,7 +76,7 @@ const specString = `[
   }
 ]`;
 
-const { imposters, outputList } = createImposters(JSON.parse(specString));
+const { imposters, proxyList } = createImposters(JSON.parse(specString));
 const impostersString = JSON.stringify(imposters, null, 2);
 
 module.exports = {

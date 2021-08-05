@@ -28,8 +28,13 @@ program
     const { createImposters } = require("./src/mountebankHelper");
     try {
       const dependencies = require(`${process.cwd()}/.guardrail/dependencies.json`);
-      const { imposters, outputList } = createImposters(dependencies);
-      console.log({ imposters, outputList });
+      const { imposters, proxyList } = createImposters(dependencies);
+      console.log({ imposters, proxyList });
+      const imposterFile = `${process.cwd()}/.guardrail/imposters.ejs`;
+      const imposterData = JSON.stringify({ imposters }, null, 2);
+      fs.writeFileSync(imposterFile, imposterData);
+      const proxyListFile = `${process.cwd()}/.guardrail/proxy-list.json`;
+      fs.writeFileSync(proxyListFile, JSON.stringify({ proxyList }, null, 2));
     } catch (error) {
       console.error(error);
     }
