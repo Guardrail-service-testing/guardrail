@@ -4,6 +4,8 @@ const { program } = require("commander");
 const fs = require("fs");
 const gor = require("./src/goReplayWrapper");
 const mb = require("./src/mountebankWrapper");
+
+const OUTPUT_FILE_DIR_NAME = `${process.cwd()}/.guardrail`;
 const options = program.opts();
 
 program.version("0.0.1");
@@ -27,20 +29,55 @@ program
     // parse dependencies.json
     const { createImposters } = require("./src/mountebankHelper");
     try {
-      const dependencies = require(`${process.cwd()}/.guardrail/dependencies.json`);
+      const dependencies = require(`${OUTPUT_FILE_DIR_NAME}/dependencies.json`);
       const { imposters, proxyList } = createImposters(dependencies);
-      console.log({ imposters, proxyList });
-      const imposterFile = `${process.cwd()}/.guardrail/imposters.ejs`;
+
+      // output imposters.ejs
+      const imposterFile = `${OUTPUT_FILE_DIR_NAME}/imposters.ejs`;
       const imposterData = JSON.stringify({ imposters }, null, 2);
       fs.writeFileSync(imposterFile, imposterData);
-      const proxyListFile = `${process.cwd()}/.guardrail/proxy-list.json`;
+
+      // output proxy-list.json
+      const proxyListFile = `${OUTPUT_FILE_DIR_NAME}/proxy-list.json`;
       fs.writeFileSync(proxyListFile, JSON.stringify({ proxyList }, null, 2));
     } catch (error) {
-      console.error(error);
+      console.error(error.message);
     }
-    // output imposters.ejs
     // start mb with the same imposters.ejs
-    // output proxy-list.json
+    try {
+      const { spawn } = require("child_process");
+      const MOUNTEBANK_PORT = 2525;
+      console.log("  Creating traffic directory for Mountebank...");
+      fs.mkdirSync(`${OUTPUT_FILE_DIR_NAME}/mb`, { recursive: true });
+      fs.mkdirSync(`${OUTPUT_FILE_DIR_NAME}/logs`, { recursive: true });
+      console.log(
+        `  Starting Mountebank listening on port ${MOUNTEBANK_PORT} with config file "imposters.ejs"...`
+      );
+      const mbOut = fs.openSync(`${OUTPUT_FILE_DIR_NAME}/logs/mb_out.log`, "a");
+      const mbErr = fs.openSync(`${OUTPUT_FILE_DIR_NAME}/logs/mb_err.log`, "a");
+      const mbSubprocess = spawn(
+        "npx",
+        [
+          "mb",
+          "--port",
+          `${MOUNTEBANK_PORT}`,
+          "--datadir",
+          `${OUTPUT_FILE_DIR_NAME}/mb`,
+          "--configfile",
+          `${OUTPUT_FILE_DIR_NAME}/imposters.ejs`,
+          "--nologfile",
+          "&",
+        ],
+        {
+          detached: true,
+          stdio: ["ignore", mbOut, mbErr],
+        }
+      );
+      mbSubprocess.unref();
+      // Mountebank automatically manages its own pid file
+    } catch (error) {
+      console.error(error.message);
+    }
   });
 
 /*

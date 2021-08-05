@@ -41,7 +41,7 @@ const createLocalhostUrl = ({ protocol, port }) => {
 };
 
 const createImposters = (destinationList) => {
-  const protocol = "http"; // Support protocol
+  const protocol = "http"; // Supported protocol
   const proxyList = [];
   const imposters = destinationList.map(
     ({ destinationURL, proxyPort, varName }) => {
