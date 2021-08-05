@@ -1,4 +1,4 @@
-#
+# Guardrail Service Testing
 
 ## Capturing traffic
 
@@ -25,13 +25,27 @@
 ]
 ```
 
-Output: `{ protocol, port, varName }`
+3. Run `guardrail setup-proxies`. The will create and start Mountebank proxies in recording mode. The list of proxies is written to a file called `proxy-list.json` with the following content.
 
 ```JSON
-[{
-	"url": http://localhost:333,
-	"varName": DEPENDENCY_1
-}]
+{
+  "proxyList": [
+    {
+      "varName": "DEPENDENCY_1",
+      "to": "https://downstream-service1",
+      "proxy": "http://localhost:5002"
+    },
+    {
+      "varName": "DEPENDENCY_2",
+      "to": "http://localhost:9000",
+      "proxy": "http://localhost:5003"
+    }
+  ]
+}
 ```
 
 We're assuming that the developer is responsible for setting the imposters.json and environment variables correctly.
+
+## Notes On Stopping Mountebank
+
+Caution. Currently, the command `guardrail stop` will remove all Mountebank proxies. If you are proxying services in production, stopping may cause service interruption.
