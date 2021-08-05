@@ -2,21 +2,29 @@ const fs = require('fs');
 const { spawn } = require('child_process');
 
 const mountebankWrapper = {
-  record(port) {
+  record(port, directory) {
+    if (fs.existsSync('mb.pid')) {
+      console.log('  Mountebank appears to already be running. Check pid file.');
+      return;
+    }
+
     console.log('  Creating traffic directory for Mountebank...');
-    fs.mkdirSync('./traffic/mb', { recursive: true });
+    fs.mkdirSync(`${directory}/mb`, { recursive: true });
+    fs.mkdirSync(`${directory}/logs`, { recursive: true });
 
     console.log(`  Starting Mountebank listening on port ${port} with config file "imposters.ejs"...`);
-    const mbOut = fs.openSync('./traffic/logs/mb_out.log', 'a');
-    const mbErr = fs.openSync('./traffic/logs/mb_err.log', 'a');
+    const mbOut = fs.openSync(`${directory}/logs/mb_out.log`, "a");
+    const mbErr = fs.openSync(`${directory}/logs/mb_err.log`, "a");
     const mbSubprocess = spawn('npx',
       [
-        'mb',
-        '--port', `${port}`,
-        '--datadir', './traffic/mb',
-        '--configfile', './setup/imposters.ejs',
-        '--nologfile',
-        '&'
+        "mb",
+        "--port", `${port}`,
+        "--datadir",
+        `${directory}/mb`,
+        "--configfile",
+        `${directory}/imposters.ejs`,
+        "--nologfile",
+        "&",
       ],
       {
         detached: true,
