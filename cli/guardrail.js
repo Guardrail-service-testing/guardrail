@@ -95,4 +95,16 @@ program
     console.log("  Recording in progress!");
   });
 
+program
+  .command("stop")
+  .description("Close any running recording processes, but leave traffic data intact.")
+  .action(() => {
+    console.log('Stopping...');
+
+    gor.stop();
+    mb.stop();
+
+    console.log('  Stopped!');
+  });
+
 program.parse(process.argv);
