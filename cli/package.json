@@ -1,0 +1,20 @@
+{
+  "name": "Guardrail CLI",
+  "version": "1.0.0",
+  "description": "",
+  "main": "guardrail.js",
+  "scripts": {
+    "preinstall": "./scripts/configure.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "commander": "^8.1.0",
+    "mountebank": "^2.4.0"
+  },
+  "devDependencies": {
+    "prettier": "2.3.2"
+  }
+}
