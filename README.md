@@ -6,7 +6,7 @@ Pick either `docker-compose.dev.yml` or `docker-compose.prod.yml` and copy it to
 For example:
 
 ```bash
-cp docker-compse.prod.yml docker-compose.yml
+cp docker-compose.prod.yml docker-compose.yml
 
 docker-compose up --build --remove-orphans
 ```

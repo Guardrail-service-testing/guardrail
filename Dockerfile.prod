@@ -11,7 +11,7 @@ RUN yarn build
 FROM node:16-alpine
 ENV NODE_ENV=production
 ENV PORT=8080
-ENV MONGO_URI=mongodb://172.17.0.1:27017/replay
+ENV MONGO_URI=mongodb://mongo:27017/replay
 RUN mkdir -p /usr/src/app
 WORKDIR /usr/src/app
 COPY --from=client /usr/app/client/build/ ./client/build
