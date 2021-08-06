@@ -1,15 +1,18 @@
 const fs = require('fs');
+const path = require('path');
 const { spawn } = require('child_process');
 
 const goReplayWrapper = {
   record(port, directory) {
     console.log('  Creating traffic directory for GoReplay...');
-    fs.mkdirSync(`${directory}/gor`, { recursive: true });
-    fs.mkdirSync(`${directory}/logs`, { recursive: true });
+    fs.mkdirSync(path.join(directory, "gor"), { recursive: true });
+    fs.mkdirSync(path.join(directory, "logs"), { recursive: true });
 
     console.log(`  Starting GoReplay listening on port ${port} and writing to "${directory}/gor/requests_0.gor"...`);
-    const gorOut = fs.openSync(`${directory}/logs/gor_out.log`, 'a');
-    const gorErr = fs.openSync(`${directory}/logs/gor_err.log`, 'a');
+    const gorOut = fs.openSync(path.join(directory, "logs","gor_out.log"), "a");
+    const gorErr = fs.openSync(path.join(directory, "logs","gor_err.log"), "a");
+    const outFile = path.join(directory, "gor", "requests.gor");
+
     const gorSubprocess = spawn('gor',
       [
         "--input-raw", `:${port}`,
@@ -17,7 +20,7 @@ const goReplayWrapper = {
         "--copy-buffer-size=32768000",
         "--input-raw-track-response",
         "--output-http-track-response",
-        `--output-file="${directory}/gor/requests.gor"`
+        `--output-file="${outFile}"`
       ],
       {
         shell: true,
@@ -30,20 +33,22 @@ const goReplayWrapper = {
 
   replay(port, directory) {
     console.log(`  Starting GoReplay in replay mode with input file "${directory}/gor/requests_0.gor" replaying to port ${port}...`);
-    fs.mkdirSync(`${directory}/logs`, { recursive: true });
-    const gorOut = fs.openSync(`${directory}/logs/gor_out.log`, "a");
-    const gorErr = fs.openSync(`${directory}/logs/gor_err.log`, "a");
+    fs.mkdirSync(path.join(directory, "logs"), { recursive: true });
+    const gorOut = fs.openSync(path.join(directory, "logs", "gor_out.log"), "a");
+    const gorErr = fs.openSync(path.join(directory, "logs", "gor_err.log"), "a");
+    const inFile = path.join(directory, "gor", "requests*.gor");
+    const outFile = path.join(directory, "gor", "replayed.gor");
 
     const gorSubprocess = spawn("gor",
       [
-        `--input-file=${directory}/gor/requests*.gor`,
+        `--input-file=${inFile}`,
         "--input-raw-buffer-size=32768000",
         "--copy-buffer-size=32768000",
         "--input-raw-track-response",
         "--output-stdout",
         "--output-http-track-response",
         `--output-http=http://localhost:${port}`,
-        `--output-file=${directory}/gor/replayed.gor`,
+        `--output-file=${outFile}`,
         `--middleware=${__dirname}/replayMiddleware.js`
       ],
       {

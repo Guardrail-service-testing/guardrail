@@ -1,28 +1,30 @@
 const fs = require('fs');
+const path = require('path');
 const { spawn } = require('child_process');
 
 const mountebankWrapper = {
   record(port, directory) {
-    if (fs.existsSync('mb.pid')) {
+    if (fs.existsSync(path.join(process.cwd(), 'mb.pid'))) {
       console.log('  Mountebank appears to already be running. Check pid file.');
       return;
     }
 
     console.log('  Creating traffic directory for Mountebank...');
-    fs.mkdirSync(`${directory}/mb`, { recursive: true });
-    fs.mkdirSync(`${directory}/logs`, { recursive: true });
+    fs.mkdirSync(path.join(directory, "mb"), { recursive: true });
+    fs.mkdirSync(path.join(directory, "logs"), { recursive: true });
 
     console.log(`  Starting Mountebank listening on port ${port} with config file "imposters.ejs"...`);
-    const mbOut = fs.openSync(`${directory}/logs/mb_out.log`, "a");
-    const mbErr = fs.openSync(`${directory}/logs/mb_err.log`, "a");
+    const mbOut = fs.openSync(path.join(directory, "logs", "mb_out.log"), "a");
+    const mbErr = fs.openSync(path.join(directory, "logs", "mb_err.log"), "a");
+    const dataDir = path.join(directory, "mb");
+    const configFile = path.join(directory, "imposters.ejs");
+
     const mbSubprocess = spawn('npx',
       [
         "mb",
-        "--port", `${port}`,
-        "--datadir",
-        `${directory}/mb`,
-        "--configfile",
-        `${directory}/imposters.ejs`,
+        `--port=${port}`,
+        `--datadir=${dataDir}`,
+        `--configfile=${configFile}`,
         "--nologfile",
         "&",
       ],
@@ -35,7 +37,7 @@ const mountebankWrapper = {
   },
 
   replay(port, directory) {
-    if (!fs.existsSync(`${directory}/mb`)) {
+    if (!fs.existsSync(path.join(directory, "mb"))) {
       console.log(`Missing Mountebank traffic data! Should be in: ${directory}/mb`);
     }
 
@@ -59,21 +61,21 @@ const mountebankWrapper = {
 
   restart(port, directory) {
     // start Mountebank if it's not running
-    if (!fs.existsSync('mb.pid')) {
+    if (!fs.existsSync(path.join(process.cwd(), 'mb.pid'))) {
       console.log('  Starting Mountebank...');
 
-      fs.mkdirSync(`${directory}/logs`, { recursive: true });
+      fs.mkdirSync(path.join(directory, "logs"), { recursive: true });
       console.log(`  Starting Mountebank listening on port ${port} with config file "imposters.ejs"...`);
-      const mbOut = fs.openSync(`${directory}/logs/mb_out.log`, "a");
-      const mbErr = fs.openSync(`${directory}/logs/mb_err.log`, "a");
+      const mbOut = fs.openSync(path.join(directory, "logs", "mb_out.log"), "a");
+      const mbErr = fs.openSync(path.join(directory, "logs", "mb_err.log"), "a");
+      const dataDir = path.join(directory, "mb");
 
       // don't use configfile here or it will overwrite existing traffic (imposters)!
       return spawn('npx',
         [
           "mb",
-          "--port", `${port}`,
-          "--datadir",
-          `${directory}/mb`,
+          `--port=${port}`,
+          `--datadir=${dataDir}`,
           "--nologfile",
           "&",
         ],
@@ -85,7 +87,7 @@ const mountebankWrapper = {
   },
 
   stop() {
-    if (fs.existsSync('mb.pid')) {
+    if (fs.existsSync(path.join(process.cwd(), 'mb.pid'))) {
       console.log('  Stopping Mountebank...');
       spawn('npx', ['mb', 'stop']);
     }

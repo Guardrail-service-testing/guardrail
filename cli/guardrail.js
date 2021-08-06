@@ -2,11 +2,12 @@
 
 const { program } = require("commander");
 const fs = require("fs");
-const gor = require("./src/goReplayWrapper");
-const mb = require("./src/mountebankWrapper");
-const collector = require("./src/collectorWrapper");
+const path = require("path");
+const gor = require(path.join(__dirname, "src", "goReplayWrapper"));
+const mb = require(path.join(__dirname, "src", "mountebankWrapper"));
+const collector = require(path.join(__dirname, "src", "collectorWrapper"));
 
-const OUTPUT_DIR = `${process.cwd()}/.guardrail`;
+const OUTPUT_DIR = path.join(__dirname, ".guardrail");
 const options = program.opts();
 
 program.version("0.0.1");
@@ -28,18 +29,18 @@ program
   .description("Setup proxies for service virtualization.")
   .action(() => {
     // parse dependencies.json
-    const { createImposters } = require("./src/mountebankHelper");
+    const { createImposters } = require(path.join(__dirname, "src", "mountebankHelper"));
     try {
-      const dependencies = require(`${OUTPUT_DIR}/dependencies.json`);
+      const dependencies = require(path.join(OUTPUT_DIR, "dependencies.json"));
       const { imposters, proxyList } = createImposters(dependencies);
 
       // output imposters.ejs
-      const imposterFile = `${OUTPUT_DIR}/imposters.ejs`;
+      const imposterFile = path.join(OUTPUT_DIR, "imposters.ejs");
       const imposterData = JSON.stringify({ imposters }, null, 2);
       fs.writeFileSync(imposterFile, imposterData);
 
       // output proxy-list.json
-      const proxyListFile = `${OUTPUT_DIR}/proxy-list.json`;
+      const proxyListFile = path.join(OUTPUT_DIR, "proxy-list.json");
       fs.writeFileSync(proxyListFile, JSON.stringify({ proxyList }, null, 2));
     } catch (error) {
       console.error(error.message);
@@ -134,10 +135,11 @@ program.command('clean')
     gor.stop();
     mb.stop();
 
-    ["gor", "logs", "mb"].forEach(dirname => {
-      if (fs.existsSync(`${OUTPUT_DIR}/${dirname}`)) {
-        console.log(`  Removing ${dirname} files...`);
-        fs.rmSync(`${OUTPUT_DIR}/${dirname}`, { force: true, recursive: true });
+    ["gor", "logs", "mb"].forEach(dirName => {
+      const directory = path.join(OUTPUT_DIR, dirName);
+      if (fs.existsSync(directory)) {
+        console.log(`  Removing ${dirName} files...`);
+        fs.rmSync(directory, { force: true, recursive: true });
       }
     });
 
