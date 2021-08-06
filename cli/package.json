@@ -1,5 +1,5 @@
 {
-  "name": "Guardrail CLI",
+  "name": "guardrail-cli",
   "version": "1.0.0",
   "description": "",
   "main": "guardrail.js",
@@ -12,7 +12,10 @@
   "license": "ISC",
   "dependencies": {
     "commander": "^8.1.0",
-    "mountebank": "^2.4.0"
+    "dotenv": "^10.0.0",
+    "goreplay_middleware": "^1.0.0",
+    "mountebank": "^2.4.0",
+    "node-fetch": "^2.6.1"
   },
   "devDependencies": {
     "prettier": "2.3.2"

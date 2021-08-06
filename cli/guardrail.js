@@ -4,6 +4,7 @@ const { program } = require("commander");
 const fs = require("fs");
 const gor = require("./src/goReplayWrapper");
 const mb = require("./src/mountebankWrapper");
+const collector = require("./src/collectorWrapper");
 
 const OUTPUT_DIR = `${process.cwd()}/.guardrail`;
 const options = program.opts();
@@ -93,6 +94,24 @@ program
     mb.record(options.mbPort, OUTPUT_DIR);
 
     console.log("  Recording in progress!");
+  });
+
+// - Start backend once with `docker-compose up` (see server's README.)
+// - Replay Mountebank
+//   - start Mountebank if it's not already running (make sure to provide `datadir`)
+//   - issue `mb replay` command to restart Mountebank in replay mode
+// - Start GoReplay, which will immediately begin replaying captured traffic.
+program.command("replay")
+  .description("Start replaying saved traffic to compare results.")
+  .action(() => {
+    console.log("Getting Guardrail ready to replay...");
+
+    // close GoReplay if it's still running
+    gor.stop();
+
+    collector.start(OUTPUT_DIR);
+    mb.replay(options.mbPort, OUTPUT_DIR)
+      .then(() => gor.replay(options.gorPort, OUTPUT_DIR));
   });
 
 program

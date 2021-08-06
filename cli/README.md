@@ -49,3 +49,15 @@ We're assuming that the developer is responsible for setting the imposters.json 
 ## Notes On Stopping Mountebank
 
 Caution. Currently, the command `guardrail stop` will remove all Mountebank proxies. If you are proxying services in production, stopping may cause service interruption.
+
+## Replaying Traffic
+
+add section about copying traffic data to Staging/Test environment
+
+- Web application should already be running (in staging/testing environment.)
+  - Developer should check the `proxy-list.json` file to verify environment variable names and virtualized URLs for each dependency service.
+- Start backend once with `docker-compose up` (see server's README.)
+- Replay Mountebank
+  - start Mountebank if it's not already running (make sure to provide `datadir`)
+  - issue `mb replay` command to restart Mountebank in replay mode
+- Start GoReplay, which will immediately begin replaying captured traffic.
