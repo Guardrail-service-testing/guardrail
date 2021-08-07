@@ -4,6 +4,7 @@ const { spawn } = require("child_process");
 
 const collectorWrapper = {
   start(directory) {
+    console.log(`  Starting background services...`);
     fs.mkdirSync(
       path.join(directory, "logs", "collector", "collector_out.log"),
       { recursive: true }

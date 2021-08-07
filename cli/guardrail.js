@@ -3,10 +3,12 @@
 const { program } = require("commander");
 const fs = require("fs");
 const path = require("path");
+const waitOn = require("wait-on");
 const gor = require(path.join(__dirname, "src", "goReplayWrapper"));
 const mb = require(path.join(__dirname, "src", "mountebankWrapper"));
 const collector = require(path.join(__dirname, "src", "collectorWrapper"));
 
+const COLLECTOR_PORT = process.env.COLLECTOR_PORT || 9001;
 const OUTPUT_DIR = path.join(__dirname, ".guardrail");
 const options = program.opts();
 
@@ -117,9 +119,14 @@ program
     if (!process.env.DISABLE_DOCKER_COMPOSE) {
       collector.start(OUTPUT_DIR);
     }
-    mb.replay(options.mbPort, OUTPUT_DIR).then(() =>
-      gor.replay(options.gorPort, OUTPUT_DIR)
-    );
+
+    waitOn({ resources: [`http://localhost:${COLLECTOR_PORT}`] })
+      .then(() => {
+        mb.replay(options.mbPort, OUTPUT_DIR).then(() =>
+          gor.replay(options.gorPort, OUTPUT_DIR)
+        );
+      })
+      .catch(console.error);
   });
 
 program
