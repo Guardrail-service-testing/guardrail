@@ -16,7 +16,7 @@ const pruneResponse = (response, ignoreHeaders = []) => {
 
 const convertBodyToText = (response) => {
   const { body, ...rest } = response;
-  const text = Buffer.from(response.body).toString();
+  const text = body.toString();
   return { body: text, ...rest };
 };
 
@@ -68,20 +68,35 @@ const diffJson = (whichPart, recorded, replayed) => {
     `replayed ${whichPart}`,
     JSON.stringify(recorded),
     JSON.stringify(replayed)
-  )
-}
+  );
+};
 
 const diffTwoResponses = ({ response, replayedResponse, ignoredHeaders }) => {
   const { correlationId, replaySessionId } = response;
   const recorded = convertBodyToText(pruneResponse(response, ignoredHeaders));
-  const replayed = convertBodyToText(pruneResponse(replayedResponse, ignoredHeaders));
+  const replayed = convertBodyToText(
+    pruneResponse(replayedResponse, ignoredHeaders)
+  );
 
-  const statusUnifiedDiffPatch = diffJson('body', recorded.status, replayed.status)
-  const headersUnifiedDiffPatch = diffJson('body', recorded.headers, replayed.headers)
-  const bodyUnifiedDiffPatch = diffJson('body', recorded.body, replayed.body)
+  const statusUnifiedDiffPatch = diffJson(
+    "body",
+    recorded.status,
+    replayed.status
+  );
+  const headersUnifiedDiffPatch = diffJson(
+    "body",
+    recorded.headers,
+    replayed.headers
+  );
+  const bodyUnifiedDiffPatch = diffJson("body", recorded.body, replayed.body);
 
   return {
-    correlationId, replaySessionId, ignoredHeaders, statusUnifiedDiffPatch, headersUnifiedDiffPatch, bodyUnifiedDiffPatch,
+    correlationId,
+    replaySessionId,
+    ignoredHeaders,
+    statusUnifiedDiffPatch,
+    headersUnifiedDiffPatch,
+    bodyUnifiedDiffPatch,
     recorded,
     replayed,
   };
