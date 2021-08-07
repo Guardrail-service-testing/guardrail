@@ -16,7 +16,7 @@ const connectDb = () => {
     .catch((error) => {
       console.log("Error connecting to database:", error.message);
     });
-}
+};
 
 const db = mongoose.connection;
 

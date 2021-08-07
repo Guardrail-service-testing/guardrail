@@ -15,5 +15,8 @@ const ReplayedResponseSchema = new Schema({
   },
 });
 
-const ReplayedResponse = mongoose.model("ReplayedResponse", ReplayedResponseSchema);
+const ReplayedResponse = mongoose.model(
+  "ReplayedResponse",
+  ReplayedResponseSchema
+);
 module.exports = { ReplayedResponse, ReplayedResponseSchema };
