@@ -29,7 +29,11 @@ program
   .description("Setup proxies for service virtualization.")
   .action(() => {
     // parse dependencies.json
-    const { createImposters } = require(path.join(__dirname, "src", "mountebankHelper"));
+    const { createImposters } = require(path.join(
+      __dirname,
+      "src",
+      "mountebankHelper"
+    ));
     try {
       const dependencies = require(path.join(OUTPUT_DIR, "dependencies.json"));
       const { imposters, proxyList } = createImposters(dependencies);
@@ -102,22 +106,27 @@ program
 //   - start Mountebank if it's not already running (make sure to provide `datadir`)
 //   - issue `mb replay` command to restart Mountebank in replay mode
 // - Start GoReplay, which will immediately begin replaying captured traffic.
-program.command("replay")
+program
+  .command("replay")
   .description("Start replaying saved traffic to compare results.")
   .action(() => {
     console.log("Getting Guardrail ready to replay...");
 
     // close GoReplay if it's still running
     gor.stop();
-
-    collector.start(OUTPUT_DIR);
-    mb.replay(options.mbPort, OUTPUT_DIR)
-      .then(() => gor.replay(options.gorPort, OUTPUT_DIR));
+    if (!process.env.DISABLE_DOCKER_COMPOSE) {
+      collector.start(OUTPUT_DIR);
+    }
+    mb.replay(options.mbPort, OUTPUT_DIR).then(() =>
+      gor.replay(options.gorPort, OUTPUT_DIR)
+    );
   });
 
 program
   .command("stop")
-  .description("Close any running recording processes, but leave traffic data intact.")
+  .description(
+    "Close any running recording processes, but leave traffic data intact."
+  )
   .action(() => {
     console.log("Stopping...");
 
@@ -127,15 +136,18 @@ program
     console.log("  Stopped!");
   });
 
-program.command('clean')
-  .description("Clean up: close any running recording processes and remove log and traffic data directories.")
+program
+  .command("clean")
+  .description(
+    "Clean up: close any running recording processes and remove log and traffic data directories."
+  )
   .action(() => {
     console.log("Cleaning up...");
 
     gor.stop();
     mb.stop();
 
-    ["gor", "logs", "mb"].forEach(dirName => {
+    ["gor", "logs", "mb"].forEach((dirName) => {
       const directory = path.join(OUTPUT_DIR, dirName);
       if (fs.existsSync(directory)) {
         console.log(`  Removing ${dirName} files...`);
