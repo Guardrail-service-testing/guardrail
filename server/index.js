@@ -48,7 +48,7 @@ app.post("/triplets", async (req, res, next) => {
       request: req1,
       response: res1,
       replayedResponse: repl1,
-    }).then((t) => console.log(t));
+    });
   } catch (error) {
     next(error);
   }
@@ -188,6 +188,8 @@ app.get("/report", async (req, res, next) => {
     let notError500ButDifferentBody = 0;
     let recordedError500 = 0;
     let replayedError500 = 0;
+    let recordedTimeouts = 0;
+    let replayedTimeouts = 0;
 
     triplets.forEach((triplet) => {
       const { response, replayedResponse } = triplet;
@@ -196,19 +198,28 @@ app.get("/report", async (req, res, next) => {
         totalResponses += 1;
       }
 
-      recordedLatencies.push(response.meta.latency);
-      replayedLatencies.push(replayedResponse.meta.latency);
+      if (response.status !== undefined) {
+        recordedLatencies.push(response.meta.latency);
 
-      if (response.status === 500) {
-        recordedError500 += 1;
+        if (response.status === 500) {
+          recordedError500 += 1;
+        } else {
+          recordedLatenciesWithoutError500.push(response.meta.latency);
+        }
       } else {
-        recordedLatenciesWithoutError500.push(response.meta.latency);
+        recordedTimeouts += 1;
       }
 
-      if (replayedResponse.status === 500) {
-        replayedError500 += 1;
+      if (replayedResponse.status !== undefined) {
+        replayedLatencies.push(replayedResponse.meta.latency);
+
+        if (replayedResponse.status === 500) {
+          replayedError500 += 1;
+        } else {
+          replayedLatenciesWithoutError500.push(replayedResponse.meta.latency);
+        }
       } else {
-        replayedLatenciesWithoutError500.push(replayedResponse.meta.latency);
+        replayedTimeouts += 1;
       }
 
       if (isDifferentBody(response, replayedResponse)) {
@@ -235,6 +246,8 @@ app.get("/report", async (req, res, next) => {
       replayedAverageLatencies,
       recordedAverageLatenciesWithoutError500,
       replayedAverageLatenciesWithoutError500,
+      recordedTimeouts,
+      replayedTimeouts,
     };
 
     res.json(report);
