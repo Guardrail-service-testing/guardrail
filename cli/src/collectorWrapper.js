@@ -22,10 +22,14 @@ const collectorWrapper = {
       "a"
     );
     // TODO: can we save this PID so it can be closed gracefully later?
-    const collectorSubprocess = spawn("docker-compose", ["up", "--detach"], {
-      cwd: "..",
-      stdio: ["ignore", collectorOut, collectorErr],
-    });
+    const collectorSubprocess = spawn(
+      "docker-compose",
+      ["up", "--detach", "--build"],
+      {
+        cwd: "..",
+        stdio: ["ignore", collectorOut, collectorErr],
+      }
+    );
 
     /*
     if (!fs.existsSync('collector.pid')) {
