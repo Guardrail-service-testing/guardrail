@@ -73,7 +73,7 @@ app.get("/triplets", async (req, res, next) => {
 });
 
 app.get("/triplets/latest", async (req, res, next) => {
-  const replaySessionId = latestReplaySessionId();
+  const replaySessionId = await latestReplaySessionId();
   Triplet.find({ replaySessionId })
     .then((triplets) => res.json(triplets))
     .catch(next);
