@@ -21,6 +21,10 @@ const convertBodyToText = (response) => {
 };
 
 const isDifferentBody = (response, replayedResponse) => {
+  if (!!response.body && !replayedResponse.body) return false;
+
+  if (!response.body && !!replayedResponse.body) return false;
+
   if (
     Buffer.compare(
       Buffer.from(response.body),
@@ -71,12 +75,22 @@ const diffJson = (whichPart, recorded, replayed) => {
   );
 };
 
+const timedOutResponse = {
+  headers: "No Response",
+  status: "No Response",
+  body: "No Response",
+};
+
 const diffTwoResponses = ({ response, replayedResponse, ignoredHeaders }) => {
   const { correlationId, replaySessionId } = response;
-  const recorded = convertBodyToText(pruneResponse(response, ignoredHeaders));
-  const replayed = convertBodyToText(
-    pruneResponse(replayedResponse, ignoredHeaders)
-  );
+  const recorded =
+    response.status === undefined
+      ? timedOutResponse
+      : convertBodyToText(pruneResponse(response, ignoredHeaders));
+  const replayed =
+    replayedResponse.status === undefined
+      ? timedOutResponse
+      : convertBodyToText(pruneResponse(replayedResponse, ignoredHeaders));
 
   const statusUnifiedDiffPatch = diffJson(
     "body",

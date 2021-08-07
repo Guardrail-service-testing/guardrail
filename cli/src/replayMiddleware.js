@@ -54,6 +54,25 @@ const split = (data) => {
 const replaySessionId = Date.now();
 const messages = {};
 
+const postAndDelete = (correlationId) => {
+  fetch(`http://localhost:${COLLECTOR_PORT}/triplets`, {
+    method: "post",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      replaySessionId,
+      correlationId,
+      triplets: messages[correlationId],
+    }),
+    agent: function (_parsedURL) {
+      return _parsedURL.protocol == "http:" ? httpAgent : httpsAgent;
+    },
+  })
+    .then(() => {
+      delete messages[correlationId];
+    })
+    .catch(console.error);
+};
+
 gor.init();
 
 gor.on("message", function (http_message) {
@@ -70,22 +89,19 @@ gor.on("message", function (http_message) {
 
   const gotAllThree = Object.keys(messages[correlationId]).length === 3;
   if (gotAllThree) {
-    fetch(`http://localhost:${COLLECTOR_PORT}/triplets`, {
-      method: "post",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        replaySessionId,
-        correlationId,
-        triplets: messages[correlationId],
-      }),
-      agent: function (_parsedURL) {
-        return _parsedURL.protocol == "http:" ? httpAgent : httpsAgent;
-      },
-    })
-      .then(() => {
-        delete messages[correlationId];
-      })
-      .catch(console.error);
+    postAndDelete(correlationId);
+  }
+
+  // The default timeout for Goreplay is 5 seconds.
+  // https://github.com/buger/goreplay/wiki/Replaying-HTTP-traffic
+  const second = 1000;
+
+  if (messageType === "request") {
+    setTimeout(() => {
+      if (messages[correlationId] !== undefined) {
+        postAndDelete(correlationId);
+      }
+    }, 6 * second);
   }
 
   return http_message;

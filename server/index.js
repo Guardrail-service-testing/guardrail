@@ -175,70 +175,72 @@ app.get("/diff", async (req, res, next) => {
 app.get("/report", async (req, res, next) => {
   const { isDifferentBody } = require("./src/utils");
 
-  const replaySessionId = await latestReplaySessionId();
-  const triplets = await Triplet.find({ replaySessionId });
+  try {
+    const replaySessionId = await latestReplaySessionId();
+    const triplets = await Triplet.find({ replaySessionId });
 
-  const recordedLatencies = []; // this should be response time (roundtrip from the recording device, not the end user response time) although goreplay calls it latency
-  const replayedLatencies = [];
-  const recordedLatenciesWithoutError500 = []; // be careful of integer overflow
-  const replayedLatenciesWithoutError500 = [];
-  let totalRequests = 0;
-  let totalResponses = 0;
-  let notError500ButDifferentBody = 0;
-  let recordedError500 = 0;
-  let replayedError500 = 0;
+    const recordedLatencies = []; // this should be response time (roundtrip from the recording device, not the end user response time) although goreplay calls it latency
+    const replayedLatencies = [];
+    const recordedLatenciesWithoutError500 = []; // be careful of integer overflow
+    const replayedLatenciesWithoutError500 = [];
+    let totalRequests = 0;
+    let totalResponses = 0;
+    let notError500ButDifferentBody = 0;
+    let recordedError500 = 0;
+    let replayedError500 = 0;
 
-  triplets.forEach((triplet) => {
-    const { response, replayedResponse } = triplet;
-    totalRequests += 1;
-    if (triplet.replayedResponse !== undefined) {
-      totalResponses += 1;
-    }
+    triplets.forEach((triplet) => {
+      const { response, replayedResponse } = triplet;
+      totalRequests += 1;
+      if (triplet.replayedResponse !== undefined) {
+        totalResponses += 1;
+      }
 
-    recordedLatencies.push(response.meta.latency);
-    replayedLatencies.push(replayedResponse.meta.latency);
+      recordedLatencies.push(response.meta.latency);
+      replayedLatencies.push(replayedResponse.meta.latency);
 
-    if (response.status === 500) {
-      recordedError500 += 1;
-    } else {
-      recordedLatenciesWithoutError500.push(response.meta.latency);
-    }
+      if (response.status === 500) {
+        recordedError500 += 1;
+      } else {
+        recordedLatenciesWithoutError500.push(response.meta.latency);
+      }
 
-    if (replayedResponse.status === 500) {
-      replayedError500 += 1;
-    } else {
-      replayedLatenciesWithoutError500.push(replayedResponse.meta.latency);
-    }
+      if (replayedResponse.status === 500) {
+        replayedError500 += 1;
+      } else {
+        replayedLatenciesWithoutError500.push(replayedResponse.meta.latency);
+      }
 
-    if (isDifferentBody(response, replayedResponse)) {
-      notError500ButDifferentBody += 1;
-    }
-  });
+      if (isDifferentBody(response, replayedResponse)) {
+        notError500ButDifferentBody += 1;
+      }
+    });
+    const average = (arr) => arr.reduce((p, c) => p + c, 0) / arr.length;
+    const recordedAverageLatencies = average(recordedLatencies);
+    const replayedAverageLatencies = average(replayedLatencies);
+    const recordedAverageLatenciesWithoutError500 = average(
+      recordedLatenciesWithoutError500
+    );
+    const replayedAverageLatenciesWithoutError500 = average(
+      replayedLatenciesWithoutError500
+    );
+    const report = {
+      replaySessionId,
+      totalRequests,
+      totalResponses,
+      recordedError500,
+      replayedError500,
+      notError500ButDifferentBody,
+      recordedAverageLatencies,
+      replayedAverageLatencies,
+      recordedAverageLatenciesWithoutError500,
+      replayedAverageLatenciesWithoutError500,
+    };
 
-  const average = (arr) => arr.reduce((p, c) => p + c, 0) / arr.length;
-  const recordedAverageLatencies = average(recordedLatencies);
-  const replayedAverageLatencies = average(replayedLatencies);
-  const recordedAverageLatenciesWithoutError500 = average(
-    recordedLatenciesWithoutError500
-  );
-  const replayedAverageLatenciesWithoutError500 = average(
-    replayedLatenciesWithoutError500
-  );
-  const report = {
-    replaySessionId,
-    totalRequests,
-    totalResponses,
-    recordedError500,
-    replayedError500,
-    notError500ButDifferentBody,
-    recordedAverageLatencies,
-    replayedAverageLatencies,
-    recordedAverageLatenciesWithoutError500,
-    replayedAverageLatenciesWithoutError500,
-  };
-
-  console.log(report);
-  res.json(report);
+    res.json(report);
+  } catch (error) {
+    console.error(error);
+  }
 });
 
 connectDb().then(async () => {
