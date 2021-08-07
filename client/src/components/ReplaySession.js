@@ -64,6 +64,14 @@ function ReplaySession(params) {
               <td>{report.totalRequests}</td>
             </tr>
             <tr>
+              <td>Number of Recorded Response Timeouts</td>
+              <td>{report.recordedTimeouts}</td>
+            </tr>
+            <tr>
+              <td>Number of Replayed Response Timeouts</td>
+              <td>{report.replayedTimeouts}</td>
+            </tr>
+            <tr>
               <td>Response Body Parity</td>
               <td>
                 {(report.totalRequests - report.notError500ButDifferentBody) /
