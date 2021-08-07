@@ -162,7 +162,7 @@ app.get("/diff", async (req, res, next) => {
   }
 });
 
-console.log('pwd:', process.cwd());
+console.log("pwd:", process.cwd());
 console.log(`Starting Collector on port ${PORT}...`);
 
 app.listen(PORT, (err) => {
