@@ -4,18 +4,28 @@ const { spawn } = require("child_process");
 
 const collectorWrapper = {
   start(directory) {
-    fs.mkdirSync(path.join(directory, "logs", "collector", "collector_out.log"), { recursive: true });
-    fs.mkdirSync(path.join(directory, "logs", "collector", "collector_err.log"), { recursive: true });
+    fs.mkdirSync(
+      path.join(directory, "logs", "collector", "collector_out.log"),
+      { recursive: true }
+    );
+    fs.mkdirSync(
+      path.join(directory, "logs", "collector", "collector_err.log"),
+      { recursive: true }
+    );
 
-    const collectorOut = fs.openSync(path.join(directory, "logs", "collector_out.log"), "a");
-    const collectorErr = fs.openSync(path.join(directory, "logs", "collector_err.log"), "a");
+    const collectorOut = fs.openSync(
+      path.join(directory, "logs", "collector_out.log"),
+      "a"
+    );
+    const collectorErr = fs.openSync(
+      path.join(directory, "logs", "collector_err.log"),
+      "a"
+    );
     // TODO: can we save this PID so it can be closed gracefully later?
-    const collectorSubprocess = spawn("docker-compose",
-      [ "up" ],
-      {
-        cwd: "..",
-        stdio: [ "ignore", collectorOut, collectorErr ]
-      });
+    const collectorSubprocess = spawn("docker-compose", ["up", "--detach"], {
+      cwd: "..",
+      stdio: ["ignore", collectorOut, collectorErr],
+    });
 
     /*
     if (!fs.existsSync('collector.pid')) {
