@@ -1,5 +1,9 @@
 # Guardrail Service Testing
 
+## Setup
+
+Setup [Goreplay](https://github.com/buger/goreplay/wiki/Getting-Started) and setup a user with [pcap permissions](https://github.com/buger/goreplay/wiki/Running-as-non-root-user).
+
 ## Capturing traffic
 
 1. Install the script
