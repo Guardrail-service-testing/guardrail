@@ -34,6 +34,7 @@ const mountebankWrapper = {
         "&",
       ],
       {
+        cwd: __dirname,
         detached: true,
         stdio: ["ignore", mbOut, mbErr],
       }
@@ -56,13 +57,21 @@ const mountebankWrapper = {
         mbSubprocess.on("spawn", () => {
           // restart Mountebank in replay mode
           console.log("  Restarting Mountebank in replay mode...");
-          resolve(spawn("npx", ["mb", "replay"]));
+          resolve(
+            spawn("npx", ["mb", "replay"], {
+              cwd: __dirname,
+            })
+          );
         });
       });
     } else {
       return new Promise((resolve) => {
         console.log("  Restarting Mountebank in replay mode...");
-        resolve(spawn("npx", ["mb", "replay"]));
+        resolve(
+          spawn("npx", ["mb", "replay"], {
+            cwd: __dirname,
+          })
+        );
       });
     }
   },
@@ -91,6 +100,7 @@ const mountebankWrapper = {
         "npx",
         ["mb", `--port=${port}`, `--datadir=${dataDir}`, "--nologfile", "&"],
         {
+          cwd: __dirname,
           detached: true,
           stdio: ["ignore", mbOut, mbErr],
         }
@@ -101,7 +111,9 @@ const mountebankWrapper = {
   stop() {
     if (fs.existsSync(path.join(process.cwd(), "mb.pid"))) {
       console.log("  Stopping Mountebank...");
-      spawn("npx", ["mb", "stop"]);
+      spawn("npx", ["mb", "stop"], {
+        cwd: __dirname,
+      });
     }
   },
 };
