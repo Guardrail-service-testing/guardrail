@@ -2,24 +2,17 @@ require("dotenv").config({ debug: process.env.DEBUG });
 require("colors");
 const express = require("express");
 const morgan = require("morgan");
-const path = require("path");
-const { connectDb, db } = require("./db/mongo");
-const { Request } = require("./db/models/request");
-const { Response } = require("./db/models/response");
-const { ReplayedResponse } = require("./db/models/replayedResponse");
-const Triplet = require("./db/models/triplet");
-const { IgnoredHeader } = require("./db/models/ignoredHeader");
 
-const PORT = process.env.PORT || 9001;
-const CLIENT_BUILD_PATH = path.join(__dirname, "../client/build");
+const { db } = require("../db/mongo.js");
+const { Request } = require("../db/models/request");
+const { Response } = require("../db/models/response");
+const { ReplayedResponse } = require("../db/models/replayedResponse");
+const Triplet = require("../db/models/triplet");
+const PORT = process.env.COLLECTOR_PORT || 9001;
+
 const app = express();
 app.use(morgan("dev"));
 app.use(express.json());
-app.use(express.static(CLIENT_BUILD_PATH));
-
-app.get("/", (req, res) => {
-  res.sendFile(path.join(CLIENT_BUILD_PATH, "index.html"));
-});
 
 app.post("/triplets", async (req, res, next) => {
   const data = req.body;
@@ -48,7 +41,7 @@ app.post("/triplets", async (req, res, next) => {
       request: req1,
       response: res1,
       replayedResponse: repl1,
-    });
+    }).then((t) => console.log(t));
   } catch (error) {
     next(error);
   }
@@ -155,16 +148,13 @@ app.get("/deltas", (req, res) => {
 app.get("/diff", async (req, res, next) => {
   const { isDifferentStatusAndBody, diffTwoResponses } = require("./src/utils");
 
-  const replaySessionId = await latestReplaySessionId();
-  const triplets = await Triplet.find({ replaySessionId }).lean();
-  const ignoredHeaders = (await IgnoredHeader.find({})) || [];
+  const triplets = await Triplet.find({});
   const tripletsWithDifferentStatusAndBody = triplets.filter(
     isDifferentStatusAndBody
   );
   try {
-    const listOfDeltas = tripletsWithDifferentStatusAndBody.map((triplet) =>
-      diffTwoResponses(triplet, ignoredHeaders)
-    );
+    const listOfDeltas =
+      tripletsWithDifferentStatusAndBody.map(diffTwoResponses);
     res.json(listOfDeltas);
   } catch (error) {
     console.error(error);
@@ -172,93 +162,10 @@ app.get("/diff", async (req, res, next) => {
   }
 });
 
-app.get("/report", async (req, res, next) => {
-  const { isDifferentBody } = require("./src/utils");
+console.log("pwd:", process.cwd());
+console.log(`Starting Collector on port ${PORT}...`);
 
-  try {
-    const replaySessionId = await latestReplaySessionId();
-    const triplets = await Triplet.find({ replaySessionId });
-
-    const recordedLatencies = []; // this should be response time (roundtrip from the recording device, not the end user response time) although goreplay calls it latency
-    const replayedLatencies = [];
-    const recordedLatenciesWithoutError500 = []; // be careful of integer overflow
-    const replayedLatenciesWithoutError500 = [];
-    let totalRequests = 0;
-    let totalResponses = 0;
-    let notError500ButDifferentBody = 0;
-    let recordedError500 = 0;
-    let replayedError500 = 0;
-    let recordedTimeouts = 0;
-    let replayedTimeouts = 0;
-
-    triplets.forEach((triplet) => {
-      const { response, replayedResponse } = triplet;
-      totalRequests += 1;
-      if (triplet.replayedResponse !== undefined) {
-        totalResponses += 1;
-      }
-
-      if (response.status !== undefined) {
-        recordedLatencies.push(response.meta.latency);
-
-        if (response.status === 500) {
-          recordedError500 += 1;
-        } else {
-          recordedLatenciesWithoutError500.push(response.meta.latency);
-        }
-      } else {
-        recordedTimeouts += 1;
-      }
-
-      if (replayedResponse.status !== undefined) {
-        replayedLatencies.push(replayedResponse.meta.latency);
-
-        if (replayedResponse.status === 500) {
-          replayedError500 += 1;
-        } else {
-          replayedLatenciesWithoutError500.push(replayedResponse.meta.latency);
-        }
-      } else {
-        replayedTimeouts += 1;
-      }
-
-      if (isDifferentBody(response, replayedResponse)) {
-        notError500ButDifferentBody += 1;
-      }
-    });
-    const average = (arr) => arr.reduce((p, c) => p + c, 0) / arr.length;
-    const recordedAverageLatencies = average(recordedLatencies);
-    const replayedAverageLatencies = average(replayedLatencies);
-    const recordedAverageLatenciesWithoutError500 = average(
-      recordedLatenciesWithoutError500
-    );
-    const replayedAverageLatenciesWithoutError500 = average(
-      replayedLatenciesWithoutError500
-    );
-    const report = {
-      replaySessionId,
-      totalRequests,
-      totalResponses,
-      recordedError500,
-      replayedError500,
-      notError500ButDifferentBody,
-      recordedAverageLatencies,
-      replayedAverageLatencies,
-      recordedAverageLatenciesWithoutError500,
-      replayedAverageLatenciesWithoutError500,
-      recordedTimeouts,
-      replayedTimeouts,
-    };
-
-    res.json(report);
-  } catch (error) {
-    console.error(error);
-  }
-});
-
-connectDb().then(async () => {
-  app.listen(PORT, (err) => {
-    if (err) console.error(err);
-    console.log("Server is listening on PORT ", PORT);
-  });
+app.listen(PORT, (err) => {
+  if (err) console.error(err);
+  console.log("Server is listening on PORT ", PORT);
 });

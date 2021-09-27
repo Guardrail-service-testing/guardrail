@@ -1,7 +1,7 @@
 FROM node:16-alpine as client
 
 WORKDIR /usr/app/client
-COPY client/package*.json ./
+COPY client/yarn.lock ./
 
 RUN yarn install
 COPY client ./
@@ -10,8 +10,8 @@ RUN yarn build
 
 FROM node:16-alpine
 ENV NODE_ENV=production
-ENV PORT=8080
-ENV MONGO_URI=mongodb://172.17.0.1:27017/replay
+ENV PORT=9001
+ENV MONGO_URI=mongodb://mongo:27017/replay
 RUN mkdir -p /usr/src/app
 WORKDIR /usr/src/app
 COPY --from=client /usr/app/client/build/ ./client/build
@@ -21,8 +21,8 @@ COPY server/package*.json ./
 RUN npm install -qy
 COPY server/ .
 
-ENV PORT 8080
+ENV PORT 9001
 
-EXPOSE 8080
+EXPOSE 9001
 
 CMD ["npm", "start"]

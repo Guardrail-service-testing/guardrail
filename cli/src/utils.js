@@ -8,23 +8,18 @@ const omit = (keys, obj) => {
 
 const pruneResponse = (response, ignoreHeaders = []) => {
   const { status, headers, body } = response;
-  const { timestamp, latency } = response.meta;
   const filteredHeaders = omit(ignoreHeaders, headers);
 
-  return { status, headers: filteredHeaders, body, timestamp, latency };
+  return { status, headers: filteredHeaders, body };
 };
 
 const convertBodyToText = (response) => {
   const { body, ...rest } = response;
-  const text = body.toString();
+  const text = Buffer.from(response.body).toString();
   return { body: text, ...rest };
 };
 
 const isDifferentBody = (response, replayedResponse) => {
-  if (!!response.body && !replayedResponse.body) return false;
-
-  if (!response.body && !!replayedResponse.body) return false;
-
   if (
     Buffer.compare(
       Buffer.from(response.body),
@@ -66,54 +61,19 @@ const isDifferentStatusAndBody = ({ request, response, replayedResponse }) => {
   return false;
 };
 
-const diffJson = (whichPart, recorded, replayed) => {
-  return unifiedDiff(
-    `recorded ${whichPart}`,
-    `replayed ${whichPart}`,
+const diffTwoResponses = ({ response, replayedResponse }) => {
+  const { correlationId } = response;
+  const recorded = convertBodyToText(pruneResponse(response));
+  const replayed = convertBodyToText(pruneResponse(replayedResponse));
+
+  const diffUnifiedPatch = unifiedDiff(
+    `${correlationId} recorded`,
+    `${correlationId} replayed`,
     JSON.stringify(recorded),
     JSON.stringify(replayed)
   );
-};
 
-const timedOutResponse = {
-  headers: "No Response",
-  status: "No Response",
-  body: "No Response",
-};
-
-const diffTwoResponses = ({ response, replayedResponse, ignoredHeaders }) => {
-  const { correlationId, replaySessionId } = response;
-  const recorded =
-    response.status === undefined
-      ? timedOutResponse
-      : convertBodyToText(pruneResponse(response, ignoredHeaders));
-  const replayed =
-    replayedResponse.status === undefined
-      ? timedOutResponse
-      : convertBodyToText(pruneResponse(replayedResponse, ignoredHeaders));
-
-  const statusUnifiedDiffPatch = diffJson(
-    "body",
-    recorded.status,
-    replayed.status
-  );
-  const headersUnifiedDiffPatch = diffJson(
-    "body",
-    recorded.headers,
-    replayed.headers
-  );
-  const bodyUnifiedDiffPatch = diffJson("body", recorded.body, replayed.body);
-
-  return {
-    correlationId,
-    replaySessionId,
-    ignoredHeaders,
-    statusUnifiedDiffPatch,
-    headersUnifiedDiffPatch,
-    bodyUnifiedDiffPatch,
-    recorded,
-    replayed,
-  };
+  return { correlationId, diffUnifiedPatch };
 };
 
 module.exports = {

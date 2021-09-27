@@ -1,12 +1,16 @@
-import React from "react"
+import React from "react";
 
 function DifPreview(params) {
-
   return (
-    <li onFocus={params.handleSelect} tabIndex={params.tabindex} className="preview" id={params.id}>
+    <li
+      onFocus={params.handleSelect}
+      tabIndex={params.tabindex}
+      className="preview"
+      id={params.id}
+    >
       <p>{params.id}</p>
     </li>
-  )
+  );
 }
 
-export default DifPreview
+export default DifPreview;

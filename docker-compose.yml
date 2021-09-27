@@ -1,21 +1,15 @@
 version: "3.4"
 
 services:
-  server:
-    image: app-server
-    container_name: app-node-server
-    restart: always
+  web:
     depends_on:
       - mongo
     build:
-      context: ./server
-      dockerfile: Dockerfile
-    env_file: ./server/.env
+      context: .
+      dockerfile: Dockerfile.prod
+    # env_file: ./server/.env # TODO -uncomment this to auto-load your .env file
     environment:
-      NODE_ENV: development
-    volumes:
-      - ./server/:/usr/src/app
-      - /usr/src/app/node_modules
+      NODE_ENV: production
     ports:
       - "9001:9001"
     networks:
@@ -23,28 +17,10 @@ services:
 
   mongo:
     image: mongo
-    restart: always
     volumes:
       - data-volume:/data/db
     ports:
       - 27027:27017
-    networks:
-      - app-network
-
-  client:
-    build:
-      context: ./client
-      dockerfile: Dockerfile
-    image: app-client
-    container_name: app-react-client
-    volumes:
-      - ./client/:/usr/app
-      - /usr/src/app/node_modules
-    command: yarn start
-    depends_on:
-      - server
-    ports:
-      - "3000:3000"
     networks:
       - app-network
 
